@@ -19,7 +19,7 @@ class Player(AbstractPlayer):
         No output is expected.
         """
         # TODO: erase the following line and implement this function.
-        raise NotImplementedError
+        self.board = board
 
     def make_move(self, time_limit):
         """Make move with this Player.
