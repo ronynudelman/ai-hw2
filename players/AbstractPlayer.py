@@ -2,7 +2,8 @@
 Your players classes must inherit from this.
 """
 import utils
-import  numpy as np
+import numpy as np
+
 class AbstractPlayer:
     """Your player must inherit from this class.
     Your player class name must be 'Player', as in the given examples (SimplePlayer, LivePlayer).
@@ -17,6 +18,9 @@ class AbstractPlayer:
         self.game_time = game_time
         self.board = np.array(24)
         self.directions = utils.get_directions
+        self.player_positions = np.full(9, -1)
+        self.rival_positions = np.full(9, -1)
+        self.turn_num = 1
 
     def set_game_params(self, board):
         """Set the game parameters needed for this player.
@@ -117,3 +121,44 @@ class AbstractPlayer:
             return self.check_next_mill(position, p, board)
         else:
             return False
+
+    @staticmethod
+    def get_player_i_num_of_available_moves(player_i, board):
+        counter = 0
+        for pos, soldier in enumerate(board):
+            if soldier == player_i:
+                available_moves = utils.get_directions(pos)
+                for move in available_moves:
+                    if board[move] == 0:
+                        counter += 1
+        return counter
+
+    @staticmethod
+    def get_player_i_num_of_soldiers(player_i, board):
+        return len(np.where(board == player_i))
+
+    @staticmethod
+    def is_player_i_wins(player_i, board):
+        if player_i == 1:
+            if AbstractPlayer.get_player_i_num_of_soldiers(player_i=2, board=board) < 3:
+                return True
+            if AbstractPlayer.get_player_i_num_of_available_moves(player_i=2, board=board) == 0:
+                return True
+        else:
+            if AbstractPlayer.get_player_i_num_of_soldiers(player_i=1, board=board) < 3:
+                return True
+            if AbstractPlayer.get_player_i_num_of_available_moves(player_i=1, board=board) == 0:
+                return True
+        return False
+
+    @staticmethod
+    def check_goal(board):
+        if AbstractPlayer.is_player_i_wins(player_i=1, board=board):
+            return 1
+        if AbstractPlayer.is_player_i_wins(player_i=2, board=board):
+            return 2
+        return 0
+
+    @staticmethod
+    def is_goal(board):
+        return AbstractPlayer.check_goal(board) > 0

@@ -8,7 +8,7 @@ ALPHA_VALUE_INIT = -np.inf
 BETA_VALUE_INIT = np.inf # !!!!!
 
 class SearchAlgos:
-    def __init__(self, utility, succ, perform_move=None, goal=None):
+    def __init__(self, utility, succ, perform_move=None, goal=None, turn_num=None):
         """The constructor for all the search algos.
         You can code these functions as you like to, 
         and use them in MiniMax and AlphaBeta algos as learned in class
@@ -21,6 +21,7 @@ class SearchAlgos:
         self.succ = succ
         self.perform_move = perform_move
         self.goal = goal
+        self.turn_num = turn_num
 
     def search(self, state, depth, maximizing_player):
         pass
@@ -36,18 +37,18 @@ class MiniMax(SearchAlgos):
         :return: A tuple: (The min max algorithm value, The direction in case of max node or None in min mode)
         """
         #TODO: erase the following line and implement this function.
-        if goal(state):
-            return utility(state)
+        if self.turn_num + depth > 18 and self.goal(state):
+            return self.utility(state)
         if depth == 0:
-            return utility(state)
+            return self.utility(state)
         if maximizing_player:
             max_val = float("-inf")
-            for child in succ(state):
+            for child in self.succ(state):
                 max_val = max(max_val, self.search(child, depth - 1, False))
             return max_val
-        else: # minimizing_player
+        else:  # minimizing_player
             min_val = float("inf")
-            for child in succ(state):
+            for child in self.succ(state):
                 min_val = min(min_val, self.search(child, depth - 1, True))
             return min_val
 
