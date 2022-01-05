@@ -1,8 +1,9 @@
-"""Abstract class of player. 
+"""Abstract class of player.
 Your players classes must inherit from this.
 """
 import utils
 import numpy as np
+
 
 class AbstractPlayer:
     """Your player must inherit from this class.
@@ -11,6 +12,7 @@ class AbstractPlayer:
     from players.AbstractPlayer import AbstractPlayer
     class Player(AbstractPlayer):
     """
+
     def __init__(self, game_time):
         """
         Player initialization.
@@ -75,30 +77,54 @@ class AbstractPlayer:
         if board is None:
             board = self.board
         mill = [
-            (self.is_player(player, 1, 2, board) or self.is_player(player, 3, 5, board)),
-            (self.is_player(player, 0, 2, board) or self.is_player(player, 9, 17, board)),
-            (self.is_player(player, 0, 1, board) or self.is_player(player, 4, 7, board)),
-            (self.is_player(player, 0, 5, board) or self.is_player(player, 11, 19, board)),
-            (self.is_player(player, 2, 7, board) or self.is_player(player, 12, 20, board)),
-            (self.is_player(player, 0, 3, board) or self.is_player(player, 6, 7, board)),
-            (self.is_player(player, 5, 7, board) or self.is_player(player, 14, 22, board)),
-            (self.is_player(player, 2, 4, board) or self.is_player(player, 5, 6, board)),
-            (self.is_player(player, 9, 10, board) or self.is_player(player, 11, 13, board)),
-            (self.is_player(player, 8, 10, board) or self.is_player(player, 1, 17, board)),
-            (self.is_player(player, 8, 9, board) or self.is_player(player, 12, 15, board)),
-            (self.is_player(player, 3, 19, board) or self.is_player(player, 8, 13, board)),
-            (self.is_player(player, 20, 4, board) or self.is_player(player, 10, 15, board)),
-            (self.is_player(player, 8, 11, board) or self.is_player(player, 14, 15, board)),
-            (self.is_player(player, 13, 15, board) or self.is_player(player, 6, 22, board)),
-            (self.is_player(player, 13, 14, board) or self.is_player(player, 10, 12, board)),
-            (self.is_player(player, 17, 18, board) or self.is_player(player, 19, 21, board)),
-            (self.is_player(player, 1, 9, board) or self.is_player(player, 16, 18, board)),
-            (self.is_player(player, 16, 17, board) or self.is_player(player, 20, 23, board)),
-            (self.is_player(player, 16, 21, board) or self.is_player(player, 3, 11, board)),
-            (self.is_player(player, 12, 4, board) or self.is_player(player, 18, 23, board)),
-            (self.is_player(player, 16, 19, board) or self.is_player(player, 22, 23, board)),
-            (self.is_player(player, 6, 14, board) or self.is_player(player, 21, 23, board)),
-            (self.is_player(player, 18, 20, board) or self.is_player(player, 21, 22, board))
+            (self.is_player(player, 1, 2, board)
+             or self.is_player(player, 3, 5, board)),
+            (self.is_player(player, 0, 2, board)
+             or self.is_player(player, 9, 17, board)),
+            (self.is_player(player, 0, 1, board)
+             or self.is_player(player, 4, 7, board)),
+            (self.is_player(player, 0, 5, board)
+             or self.is_player(player, 11, 19, board)),
+            (self.is_player(player, 2, 7, board)
+             or self.is_player(player, 12, 20, board)),
+            (self.is_player(player, 0, 3, board)
+             or self.is_player(player, 6, 7, board)),
+            (self.is_player(player, 5, 7, board)
+             or self.is_player(player, 14, 22, board)),
+            (self.is_player(player, 2, 4, board)
+             or self.is_player(player, 5, 6, board)),
+            (self.is_player(player, 9, 10, board)
+             or self.is_player(player, 11, 13, board)),
+            (self.is_player(player, 8, 10, board)
+             or self.is_player(player, 1, 17, board)),
+            (self.is_player(player, 8, 9, board)
+             or self.is_player(player, 12, 15, board)),
+            (self.is_player(player, 3, 19, board)
+             or self.is_player(player, 8, 13, board)),
+            (self.is_player(player, 20, 4, board)
+             or self.is_player(player, 10, 15, board)),
+            (self.is_player(player, 8, 11, board)
+             or self.is_player(player, 14, 15, board)),
+            (self.is_player(player, 13, 15, board)
+             or self.is_player(player, 6, 22, board)),
+            (self.is_player(player, 13, 14, board)
+             or self.is_player(player, 10, 12, board)),
+            (self.is_player(player, 17, 18, board)
+             or self.is_player(player, 19, 21, board)),
+            (self.is_player(player, 1, 9, board)
+             or self.is_player(player, 16, 18, board)),
+            (self.is_player(player, 16, 17, board)
+             or self.is_player(player, 20, 23, board)),
+            (self.is_player(player, 16, 21, board)
+             or self.is_player(player, 3, 11, board)),
+            (self.is_player(player, 12, 4, board)
+             or self.is_player(player, 18, 23, board)),
+            (self.is_player(player, 16, 19, board)
+             or self.is_player(player, 22, 23, board)),
+            (self.is_player(player, 6, 14, board)
+             or self.is_player(player, 21, 23, board)),
+            (self.is_player(player, 18, 20, board)
+             or self.is_player(player, 21, 22, board))
         ]
 
         return mill[position]
@@ -121,44 +147,3 @@ class AbstractPlayer:
             return self.check_next_mill(position, p, board)
         else:
             return False
-
-    @staticmethod
-    def get_player_i_num_of_available_moves(player_i, board):
-        counter = 0
-        for pos, soldier in enumerate(board):
-            if soldier == player_i:
-                available_moves = utils.get_directions(pos)
-                for move in available_moves:
-                    if board[move] == 0:
-                        counter += 1
-        return counter
-
-    @staticmethod
-    def get_player_i_num_of_soldiers(player_i, board):
-        return len(np.where(board == player_i))
-
-    @staticmethod
-    def is_player_i_wins(player_i, board):
-        if player_i == 1:
-            if AbstractPlayer.get_player_i_num_of_soldiers(player_i=2, board=board) < 3:
-                return True
-            if AbstractPlayer.get_player_i_num_of_available_moves(player_i=2, board=board) == 0:
-                return True
-        else:
-            if AbstractPlayer.get_player_i_num_of_soldiers(player_i=1, board=board) < 3:
-                return True
-            if AbstractPlayer.get_player_i_num_of_available_moves(player_i=1, board=board) == 0:
-                return True
-        return False
-
-    @staticmethod
-    def check_goal(board):
-        if AbstractPlayer.is_player_i_wins(player_i=1, board=board):
-            return 1
-        if AbstractPlayer.is_player_i_wins(player_i=2, board=board):
-            return 2
-        return 0
-
-    @staticmethod
-    def is_goal(board):
-        return AbstractPlayer.check_goal(board) > 0
