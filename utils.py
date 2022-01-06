@@ -114,17 +114,6 @@ def printBoard(board):
     print("\n")
 
 
-def get_player_i_num_of_available_moves(player_i, board):
-    counter = 0
-    for pos, soldier in enumerate(board):
-        if soldier == player_i:
-            available_moves = get_directions(pos)
-            for move in available_moves:
-                if board[move] == 0:
-                    counter += 1
-    return counter
-
-
 def is_player_i_can_move(player_i, board):
     for pos, soldier in enumerate(board):
         if soldier == player_i:
@@ -135,43 +124,44 @@ def is_player_i_can_move(player_i, board):
     return False
 
 
-def get_player_i_num_of_soldiers(player_i, board):
-    return len(np.where(board == player_i))
-
-
-def is_player_i_wins(player_i, board):
-    if player_i == 1:
-        if get_player_i_num_of_soldiers(player_i=2, board=board) < 3:
-            return True
-        if not is_player_i_can_move(player_i=2, board=board):
-            return True
+def succ(state, stage):
+    if stage == 1:
+        return state.stage_1_succ()
     else:
-        if get_player_i_num_of_soldiers(player_i=1, board=board) < 3:
-            return True
-        if not is_player_i_can_move(player_i=1, board=board):
-            return True
-    return False
+        return state.stage_2_succ()
 
 
-def check_goal(board):
-    if is_player_i_wins(player_i=1, board=board):
-        return 1
-    if is_player_i_wins(player_i=2, board=board):
-        return 2
-    return 0
+def heuristic(state, player):
+    h = 0
+    h += state.player_1_soldiers_num - state.player_2_soldiers_num
+    h += (state.player_1_mills_num - state.player_2_mills_num) * 3
+    h += (state.player_1_almost_mills_num - state.player_2_almost_mills_num) * 2
+    if player == 1:
+        return h
+    else:
+        return -h
 
 
-def is_goal(board):
-    return check_goal(board) > 0
+def utility(state, player):
+    if state.is_player_1_won() and player == 1:
+        return float("inf")
+    elif state.is_player_1_won() and player == 2:
+        return float("-inf")
+    elif state.is_player_2_won() and player == 1:
+        return float("-inf")
+    elif state.is_player_2_won() and player == 2:
+        return float("inf")
+    else:
+        return heuristic(state)
 
 
 class State:
 
-    def __init__(self, player_turn, board, player_1_positions, player_2_positions,
+    def __init__(self, player, board, player_1_positions, player_2_positions,
                  player_1_soldiers_num, player_2_soldiers_num,
                  player_1_mills_num, player_2_mills_num,
                  player_1_almost_mills_num, player_2_almost_mills_num):
-        self.player_turn = player_turn
+        self.player = player
         self.board = board
         self.player_1_positions = player_1_positions
         self.player_2_positions = player_2_positions
@@ -185,7 +175,7 @@ class State:
         self.is_player_2_can_move = is_player_i_can_move(2, board)
 
     def print(self):
-        print("self.player_turn =", self.player_turn)
+        print("self.player =", self.player)
         print("self.player_1_positions =", self.player_1_positions)
         print("self.player_2_positions =", self.player_2_positions)
         print("self.player_1_soldiers_num =", self.player_1_soldiers_num)
@@ -198,6 +188,20 @@ class State:
               self.player_2_almost_mills_num)
         print("self.is_player_1_can_move =", self.is_player_1_can_move)
         print("self.is_player_2_can_move =", self.is_player_2_can_move)
+
+    def is_player_1_won(self):
+        if self.player_2_soldiers_num < 3:
+            return True
+        if not self.is_player_2_can_move:
+            return True
+        return False
+
+    def is_player_2_won(self):
+        if self.player_1_soldiers_num < 3:
+            return True
+        if not self.is_player_1_can_move:
+            return True
+        return False
 
     def is_goal(self):
         if self.player_1_soldiers_num < 3:
@@ -318,7 +322,7 @@ class State:
         return new_board, new_player_1_positions, new_player_2_positions
 
     def stage_1_succ(self):
-        if self.player_turn == 1:
+        if self.player == 1:
             for pos, value in enumerate(self.board):
                 if value == 0:
                     (before_insert_player_2_mills_num,
@@ -428,7 +432,7 @@ class State:
                                     before_insert_player_1_almost_mills_num, after_insert_player_2_almost_mills_num)
 
     def stage_2_succ(self):
-        if self.player_turn == 1:
+        if self.player == 1:
             for soldier_index, prev_pos in enumerate(self.player_1_positions):
                 if prev_pos >= 0:
                     (before_move_player_1_mills_num,
