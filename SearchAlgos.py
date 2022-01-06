@@ -37,7 +37,7 @@ class MiniMax(SearchAlgos):
         :return: A tuple: (The min max algorithm value, The direction in case of max node or None in min mode)
         """
         #TODO: erase the following line and implement this function.
-        if self.turn_num + depth > 18 and self.goal(state):
+        if self.turn_num + depth > 18 and self.goal(state):  # TODO: fix it, it's incorrect!
             return self.utility(state)
         if depth == 0:
             return self.utility(state)

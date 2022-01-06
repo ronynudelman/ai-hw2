@@ -17,12 +17,21 @@ class AbstractPlayer:
         """
         Player initialization.
         """
+        self.is_game_started = False
+        self.player = 0                             # At the beginning we don't know if we are player 1 or 2
         self.game_time = game_time
-        self.board = np.array(24)
-        self.directions = utils.get_directions
-        self.player_positions = np.full(9, -1)
-        self.rival_positions = np.full(9, -1)
         self.turn_num = 1
+        self.state = utils.State(player=0,          # At the beginning we don't know if we are player 1 or 2
+                                 board=np.array(24),
+                                 player_1_positions=np.full(9, -1),
+                                 player_2_positions=np.full(9, -1),
+                                 player_1_soldiers_num=0,
+                                 player_2_soldiers_num=0,
+                                 player_1_mills_num=0,
+                                 player_2_mills_num=0,
+                                 player_1_almost_mills_num=0,
+                                 player_2_almost_mills_num=0)
+
 
     def set_game_params(self, board):
         """Set the game parameters needed for this player.

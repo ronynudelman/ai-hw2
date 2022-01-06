@@ -5,6 +5,7 @@ from players.AbstractPlayer import AbstractPlayer
 #TODO: you can import more modules, if needed
 import numpy as np
 from SearchAlgos import MiniMax
+import utils
 
 class Player(AbstractPlayer):
     def __init__(self, game_time):
@@ -20,7 +21,7 @@ class Player(AbstractPlayer):
         No output is expected.
         """
         # TODO: erase the following line and implement this function.
-        self.board = board
+        self.state.board = board
 
     def make_move(self, time_limit):
         """Make move with this Player.
@@ -30,21 +31,26 @@ class Player(AbstractPlayer):
             - direction: tuple, specifing the Player's movement
         """
         #TODO: erase the following line and implement this function.
-        minimax = MiniMax(utility, succ, None, AbstractPlayer.is_goal, self.turn_num)
-        depth = 1
+        if not self.is_game_started:
+            self.player = 1
+            self.state.player = 1
+            self.is_game_started = True
+        minimax = MiniMax(utils.utility, utils.succ, None, utils.is_goal, self.turn_num)
         best_succ = None
-        while self.is_enough_time():
-            max_val = float("-inf")
-            max_next_succ = None
-            for next_succ in succ(self.board):
-                curr_val = minimax.search(next_succ, depth-1, False)
-                if curr_val > max_val:
-                    max_next_succ = next_succ
-                    max_val = curr_val
-            best_succ = max_next_succ
-        next_player_pos, number_of_soldier, rival_dead_pos = self.parse_succ_to_direction(best_next_succ)
-        self.update_player_after_move(best_succ, number_of_soldier, next_player_pos, rival_dead_pos)
-        return next_player_pos, number_of_soldier, rival_dead_pos
+        max_depth = 1
+        while is_enough_time():
+            inner_max_val = float("-inf")
+            inner_best_succ = None
+            for next_succ in utils.succ(self.state):
+                curr_val = minimax.search(next_succ, max_depth - 1, False)
+                if curr_val >= inner_max_val:
+                    inner_max_val = curr_val
+                    inner_best_succ = next_succ
+            best_succ = inner_best_succ
+            max_depth += 1
+        self.turn_num += 1
+        self.state = best_succ
+        return best_succ.last_move
 
     def update_player_after_move(self, succ, number_of_soldier, next_player_pos, rival_dead_pos):
         self.player_positions[number_of_soldier] = next_player_pos

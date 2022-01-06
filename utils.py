@@ -11,30 +11,30 @@ BETA_VALUE_INIT = None
 
 def get_possible_mills(position):
     mills = [
-        [[1, 2], [3, 5]],    # 0
-        [[0, 2], [9, 17]],   # 1
-        [[0, 1], [4, 7]],    # 2
-        [[11, 19], [0, 5]],  # 3
-        [[12, 20], [2, 7]],  # 4
-        [[6, 7], [0, 3]],    # 5
-        [[5, 7], [14, 22]],  # 6
-        [[5, 6], [2, 4]],    # 7
-        [[9, 10], [11, 13]],  # 8
-        [[8, 10], [1, 17]],  # 9
-        [[8, 9], [12, 15]],  # 10
-        [[3, 19], [8, 13]],  # 11
-        [[4, 20], [10, 15]],  # 12
-        [[14, 15], [8, 11]],  # 13
-        [[13, 15], [6, 22]],  # 14
-        [[13, 14], [10, 12]],  # 15
-        [[17, 18], [19, 21]],  # 16
-        [[16, 18], [1, 9]],  # 17
-        [[16, 17], [20, 23]],  # 18
-        [[3, 11], [16, 21]],  # 19
-        [[4, 12], [18, 23]],  # 20
-        [[22, 23], [16, 19]],  # 21
-        [[21, 23], [6, 14]],  # 22
-        [[21, 22], [18, 20]]  # 23
+        [[1, 2], [3, 5]],       # 0
+        [[0, 2], [9, 17]],      # 1
+        [[0, 1], [4, 7]],       # 2
+        [[11, 19], [0, 5]],     # 3
+        [[12, 20], [2, 7]],     # 4
+        [[6, 7], [0, 3]],       # 5
+        [[5, 7], [14, 22]],     # 6
+        [[5, 6], [2, 4]],       # 7
+        [[9, 10], [11, 13]],    # 8
+        [[8, 10], [1, 17]],     # 9
+        [[8, 9], [12, 15]],     # 10
+        [[3, 19], [8, 13]],     # 11
+        [[4, 20], [10, 15]],    # 12
+        [[14, 15], [8, 11]],    # 13
+        [[13, 15], [6, 22]],    # 14
+        [[13, 14], [10, 12]],   # 15
+        [[17, 18], [19, 21]],   # 16
+        [[16, 18], [1, 9]],     # 17
+        [[16, 17], [20, 23]],   # 18
+        [[3, 11], [16, 21]],    # 19
+        [[4, 12], [18, 23]],    # 20
+        [[22, 23], [16, 19]],   # 21
+        [[21, 23], [6, 14]],    # 22
+        [[21, 22], [18, 20]]    # 23
     ]
     return mills[position]
 
@@ -152,7 +152,11 @@ def utility(state, player):
     elif state.is_player_2_won() and player == 2:
         return float("inf")
     else:
-        return heuristic(state)
+        return heuristic(state, player)
+
+
+def is_goal(state):
+    return state.is_goal()
 
 
 class State:
@@ -160,7 +164,8 @@ class State:
     def __init__(self, player, board, player_1_positions, player_2_positions,
                  player_1_soldiers_num, player_2_soldiers_num,
                  player_1_mills_num, player_2_mills_num,
-                 player_1_almost_mills_num, player_2_almost_mills_num):
+                 player_1_almost_mills_num, player_2_almost_mills_num,
+                 last_move=None):
         self.player = player
         self.board = board
         self.player_1_positions = player_1_positions
@@ -173,6 +178,7 @@ class State:
         self.player_2_almost_mills_num = player_2_almost_mills_num
         self.is_player_1_can_move = is_player_i_can_move(1, board)
         self.is_player_2_can_move = is_player_i_can_move(2, board)
+        self.last_move = last_move
 
     def print(self):
         print("self.player =", self.player)
@@ -188,6 +194,7 @@ class State:
               self.player_2_almost_mills_num)
         print("self.is_player_1_can_move =", self.is_player_1_can_move)
         print("self.is_player_2_can_move =", self.is_player_2_can_move)
+        print("self.last_move =", self.last_move)
 
     def is_player_1_won(self):
         if self.player_2_soldiers_num < 3:
@@ -309,17 +316,20 @@ class State:
         new_player_1_positions = np.copy(self.player_1_positions)
         new_player_2_positions = np.copy(self.player_2_positions)
         new_board[pos] = player_i
+        new_soldier_index = 0
         if player_i == 1:
             for index, soldier_position in enumerate(self.player_1_positions):
                 if soldier_position == -1:
                     new_player_1_positions[index] = pos
+                    new_soldier_index = index
                     break
         else:
             for index, soldier_position in enumerate(self.player_2_positions):
                 if soldier_position == -1:
                     new_player_2_positions[index] = pos
+                    new_soldier_index = index
                     break
-        return new_board, new_player_1_positions, new_player_2_positions
+        return new_soldier_index, new_board, new_player_1_positions, new_player_2_positions
 
     def stage_1_succ(self):
         if self.player == 1:
@@ -331,7 +341,8 @@ class State:
                                                                                                self.board,
                                                                                                self.player_2_mills_num,
                                                                                                self.player_2_almost_mills_num)
-                    (after_insert_board,
+                    (new_soldier_index,
+                     after_insert_board,
                      after_insert_player_1_positions,
                      after_insert_player_2_positions) = self.stage_1_update_after_partial_move(1, pos)
                     (is_new_mill,
@@ -369,13 +380,15 @@ class State:
                                             after_kill_player_1_positions, after_kill_player_2_positions,
                                             self.player_1_soldiers_num + 1, self.player_2_soldiers_num - 1,
                                             after_kill_player_1_mills_num, after_kill_player_2_mills_num,
-                                            after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num)
+                                            after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num,
+                                            (pos, new_soldier_index, rival_pos))
                     else:
                         yield State(2, after_insert_board,
                                     after_insert_player_1_positions, after_insert_player_2_positions,
                                     self.player_1_soldiers_num + 1, self.player_2_soldiers_num,
                                     after_insert_player_1_mills_num, before_insert_player_2_mills_num,
-                                    after_insert_player_1_almost_mills_num, before_insert_player_2_almost_mills_num)
+                                    after_insert_player_1_almost_mills_num, before_insert_player_2_almost_mills_num,
+                                    (pos, new_soldier_index, -1))
         else:
             for pos, value in enumerate(self.board):
                 if value == 0:
@@ -385,7 +398,8 @@ class State:
                                                                                                self.board,
                                                                                                self.player_1_mills_num,
                                                                                                self.player_1_almost_mills_num)
-                    (after_insert_board,
+                    (new_soldier_index,
+                     after_insert_board,
                      after_insert_player_1_positions,
                      after_insert_player_2_positions) = self.stage_1_update_after_partial_move(2, pos)
                     (is_new_mill,
@@ -423,13 +437,15 @@ class State:
                                             after_kill_player_1_positions, after_kill_player_2_positions,
                                             self.player_1_soldiers_num - 1, self.player_2_soldiers_num + 1,
                                             after_kill_player_1_mills_num, after_kill_player_2_mills_num,
-                                            after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num)
+                                            after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num,
+                                            (pos, new_soldier_index, rival_pos))
                     else:
                         yield State(1, after_insert_board,
                                     after_insert_player_1_positions, after_insert_player_2_positions,
                                     self.player_1_soldiers_num, self.player_2_soldiers_num + 1,
                                     before_insert_player_1_mills_num, after_insert_player_2_mills_num,
-                                    before_insert_player_1_almost_mills_num, after_insert_player_2_almost_mills_num)
+                                    before_insert_player_1_almost_mills_num, after_insert_player_2_almost_mills_num,
+                                    (pos, new_soldier_index, -1))
 
     def stage_2_succ(self):
         if self.player == 1:
@@ -485,13 +501,15 @@ class State:
                                                     after_kill_player_1_positions, after_kill_player_2_positions,
                                                     self.player_1_soldiers_num, self.player_2_soldiers_num - 1,
                                                     after_kill_player_1_mills_num, after_kill_player_2_mills_num,
-                                                    after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num)
+                                                    after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num,
+                                                    (next_pos, soldier_index, rival_pos))
                             else:
                                 yield State(2, after_move_board,
                                             after_move_player_1_positions, after_move_player_2_positions,
                                             self.player_1_soldiers_num, self.player_2_soldiers_num,
                                             after_move_player_1_mills_num, self.player_2_mills_num,
-                                            after_move_player_1_almost_mills_num, self.player_2_almost_mills_num)
+                                            after_move_player_1_almost_mills_num, self.player_2_almost_mills_num,
+                                            (next_pos, soldier_index, -1))
         else:
             for soldier_index, prev_pos in enumerate(self.player_2_positions):
                 if prev_pos >= 0:
@@ -545,10 +563,12 @@ class State:
                                                     after_kill_player_1_positions, after_kill_player_2_positions,
                                                     self.player_1_soldiers_num - 1, self.player_2_soldiers_num,
                                                     after_kill_player_1_mills_num, after_kill_player_2_mills_num,
-                                                    after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num)
+                                                    after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num,
+                                                    (next_pos, soldier_index, rival_pos))
                             else:
                                 yield State(1, after_move_board,
                                             after_move_player_1_positions, after_move_player_2_positions,
                                             self.player_1_soldiers_num, self.player_2_soldiers_num,
                                             self.player_1_mills_num, after_move_player_2_mills_num,
-                                            self.player_1_almost_mills_num, after_move_player_2_almost_mills_num)
+                                            self.player_1_almost_mills_num, after_move_player_2_almost_mills_num
+                                            (next_pos, soldier_index, -1))
