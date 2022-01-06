@@ -225,64 +225,71 @@ class State:
         return new_board, new_player_1_positions, new_player_2_positions
 
     def is_almost_mill(self, player_i, pos, board):
+        new_almost_mill_counter = 0
         if board[pos] != 0 and board[pos] != player_i:
-            return False
+            return new_almost_mill_counter
         possible_mills = get_possible_mills(pos)
-        horizonal_mill = possible_mills[0]
+        horizontal_mill = possible_mills[0]
         vertical_mill = possible_mills[1]
         if board[pos] == 0:
-            if board[horizonal_mill[0]] == player_i and board[horizonal_mill[1]] == player_i:
-                return True
+            if board[horizontal_mill[0]] == player_i and board[horizontal_mill[1]] == player_i:
+                new_almost_mill_counter += 1
             if board[vertical_mill[0]] == player_i and board[vertical_mill[1]] == player_i:
-                return True
+                new_almost_mill_counter += 1
         else:
-            if board[horizonal_mill[0]] == player_i and board[horizonal_mill[1]] == 0:
-                return True
-            if board[horizonal_mill[0]] == 0 and board[horizonal_mill[1]] == player_i:
-                return True
+            if board[horizontal_mill[0]] == player_i and board[horizontal_mill[1]] == 0:
+                new_almost_mill_counter += 1
+            if board[horizontal_mill[0]] == 0 and board[horizontal_mill[1]] == player_i:
+                new_almost_mill_counter += 1
             if board[vertical_mill[0]] == player_i and board[vertical_mill[1]] == 0:
-                return True
+                new_almost_mill_counter += 1
             if board[vertical_mill[0]] == 0 and board[vertical_mill[1]] == player_i:
-                return True
-        return False
+                new_almost_mill_counter += 1
+        return new_almost_mill_counter
 
     def is_mill(self, player_i, pos, board):
+        new_mill_counter = 0
         if board[pos] != player_i:
-            return False
+            return new_mill_counter
         possible_mills = get_possible_mills(pos)
-        horizonal_mill = possible_mills[0]
+        horizontal_mill = possible_mills[0]
         vertical_mill = possible_mills[1]
-        if board[horizonal_mill[0]] == player_i and board[horizonal_mill[1]] == player_i:
-            return True
+        if board[horizontal_mill[0]] == player_i and board[horizontal_mill[1]] == player_i:
+            new_mill_counter += 1
         if board[vertical_mill[0]] == player_i and board[vertical_mill[1]] == player_i:
-            return True
-        return False
+            new_mill_counter += 1
+        return new_mill_counter
 
     def check_mill_was_created(self, player_i, pos, board,
                                mills_num, almost_mills_num):
         is_new_mill = False
-        new_mills_num = mills_num
-        new_almost_mills_num = almost_mills_num
-        if self.is_mill(player_i, pos, board):
+        updated_mills_num = mills_num
+        updated_almost_mills_num = almost_mills_num
+        new_mill_counter = self.is_mill(player_i, pos, board)
+        new_almost_mill_counter = self.is_almost_mill(player_i, pos, board)
+        if new_mill_counter > 0:
             is_new_mill = True
-            new_mills_num = mills_num + 1
-        elif self.is_almost_mill(player_i, pos, board):
-            new_almost_mills_num = almost_mills_num + 1
-        return is_new_mill, new_mills_num, new_almost_mills_num
+            updated_mills_num = mills_num + new_mill_counter
+            updated_almost_mills_num = almost_mills_num - new_mill_counter
+        if new_almost_mill_counter > 0:
+            updated_almost_mills_num += new_almost_mill_counter
+        return is_new_mill, updated_mills_num, updated_almost_mills_num
 
     def check_mill_will_be_ruined(self, player_i, pos, board,
                                   mills_num, almost_mills_num):
-        new_mills_num = mills_num
-        new_almost_mills_num = almost_mills_num
-        if self.is_mill(player_i, pos, board):
-            new_mills_num = mills_num - 1
-            new_almost_mills_num = almost_mills_num + 1
-        elif self.is_almost_mill(player_i, pos, board):
-            new_almost_mills_num = almost_mills_num - 1
-        return new_mills_num, new_almost_mills_num
+        updated_mills_num = mills_num
+        updated_almost_mills_num = almost_mills_num
+        will_be_ruined_mill_counter = self.is_mill(player_i, pos, board)
+        will_be_ruined_almost_mill_counter = self.is_almost_mill(player_i, pos, board)
+        if will_be_ruined_mill_counter > 0:
+            updated_mills_num = mills_num - will_be_ruined_mill_counter
+            updated_almost_mills_num = almost_mills_num + will_be_ruined_mill_counter
+        if will_be_ruined_almost_mill_counter > 0:
+            updated_almost_mills_num -= will_be_ruined_almost_mill_counter
+        return updated_mills_num, updated_almost_mills_num
 
-    def update_after_soldier_killed(self, board, player_i, soldier_pos, soldier_index, player_1_positions,
-                                    player_2_positions):
+    def update_after_soldier_killed(self, player_i, board, soldier_pos, soldier_index,
+                                    player_1_positions, player_2_positions):
         new_board = np.copy(board)
         new_board[soldier_pos] = 0
         new_player_1_positions = np.copy(player_1_positions)
@@ -351,94 +358,120 @@ class State:
         if self.player_turn == 1:
             for soldier_index, prev_pos in enumerate(self.player_1_positions):
                 if prev_pos >= 0:
-                    (new_player_1_mills_num,
-                     new_player_1_almost_mills_num) = self.check_mill_will_be_ruined(1,
-                                                                                     prev_pos,
-                                                                                     self.board,
-                                                                                     self.player_1_mills_num,
-                                                                                     self.player_1_almost_mills_num)
+                    (before_move_player_1_mills_num,
+                     before_move_player_1_almost_mills_num) = self.check_mill_will_be_ruined(1,
+                                                                                             prev_pos,
+                                                                                             self.board,
+                                                                                             self.player_1_mills_num,
+                                                                                             self.player_1_almost_mills_num)
                     next_positions = get_directions(prev_pos)
                     for next_pos in next_positions:
                         if self.board[next_pos] == 0:
-                            (new_board,
-                             new_player_1_positions,
-                             new_player_2_positions) = self.stage_2_update_after_partial_move(1, prev_pos, next_pos,
-                                                                                              soldier_index)
-                            (is_new_mill,
-                             new_player_1_mills_num_after_move,
-                             new_player_1_almost_mills_num_after_move) = self.check_mill_was_created(1,
+                            (after_move_board,
+                             after_move_player_1_positions,
+                             after_move_player_2_positions) = self.stage_2_update_after_partial_move(1,
+                                                                                                     prev_pos,
                                                                                                      next_pos,
-                                                                                                     new_board,
-                                                                                                     new_player_1_mills_num,
-                                                                                                     new_player_1_almost_mills_num)
+                                                                                                     soldier_index)
+                            (is_new_mill,
+                             after_move_player_1_mills_num,
+                             after_move_player_1_almost_mills_num) = self.check_mill_was_created(1,
+                                                                                                 next_pos,
+                                                                                                 after_move_board,
+                                                                                                 before_move_player_1_mills_num,
+                                                                                                 before_move_player_1_almost_mills_num)
                             if is_new_mill:
                                 for rival_index, rival_pos in enumerate(self.player_2_positions):
-                                    (new_player_2_mills_num,
-                                     new_player_2_almost_mills_num) = self.check_mill_will_be_ruined(2, rival_pos,
-                                                                                                     new_board,
-                                                                                                     self.player_2_mills_num,
-                                                                                                     self.player_2_almost_mills_num)
-                                    (new_board_after_kill, new_player_1_positions_after_kill,
-                                     new_player_2_positions_after_kill) = self.update_after_soldier_killed(new_board, 2,
+                                    if rival_pos >= 0:
+                                        (after_kill_player_2_mills_num,
+                                         after_kill_player_2_almost_mills_num) = self.check_mill_will_be_ruined(2,
+                                                                                                                rival_pos,
+                                                                                                                after_move_board,
+                                                                                                                self.player_2_mills_num,
+                                                                                                                self.player_2_almost_mills_num)
+                                        (after_kill_board,
+                                         after_kill_player_1_positions,
+                                         after_kill_player_2_positions) = self.update_after_soldier_killed(2,
+                                                                                                           after_move_board,
                                                                                                            rival_pos,
                                                                                                            rival_index,
-                                                                                                           new_player_1_positions,
-                                                                                                           new_player_2_positions)
-                                    yield State(2, new_board_after_kill,
-                                                new_player_1_positions, new_player_2_positions_after_kill,
-                                                self.player_1_soldiers_num, self.player_2_soldiers_num - 1,
-                                                new_player_1_mills_num_after_move, new_player_2_mills_num,
-                                                new_player_1_almost_mills_num_after_move, new_player_2_almost_mills_num)
+                                                                                                           after_move_player_1_positions,
+                                                                                                           after_move_player_2_positions)
+                                        (_,
+                                         after_kill_player_1_mills_num,
+                                         after_kill_player_1_almost_mills_num) = self.check_mill_was_created(1,
+                                                                                                             rival_pos,
+                                                                                                             after_kill_board,
+                                                                                                             after_move_player_1_mills_num,
+                                                                                                             after_move_player_1_almost_mills_num)
+                                        yield State(2, after_kill_board,
+                                                    after_kill_player_1_positions, after_kill_player_2_positions,
+                                                    self.player_1_soldiers_num, self.player_2_soldiers_num - 1,
+                                                    after_kill_player_1_mills_num, after_kill_player_2_mills_num,
+                                                    after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num)
                             else:
-                                yield State(2, new_board,
-                                            new_player_1_positions, new_player_2_positions,
+                                yield State(2, after_move_board,
+                                            after_move_player_1_positions, after_move_player_2_positions,
                                             self.player_1_soldiers_num, self.player_2_soldiers_num,
-                                            new_player_1_mills_num_after_move, self.player_2_mills_num,
-                                            new_player_1_almost_mills_num_after_move, self.player_2_almost_mills_num)
+                                            after_move_player_1_mills_num, self.player_2_mills_num,
+                                            after_move_player_1_almost_mills_num, self.player_2_almost_mills_num)
         else:
             for soldier_index, prev_pos in enumerate(self.player_2_positions):
                 if prev_pos >= 0:
-                    (new_player_2_mills_num,
-                     new_player_2_almost_mills_num) = self.check_mill_will_be_ruined(2,
-                                                                                     prev_pos,
-                                                                                     self.board,
-                                                                                     self.player_2_mills_num,
-                                                                                     self.player_2_almost_mills_num)
+                    (before_move_player_2_mills_num,
+                     before_move_player_2_almost_mills_num) = self.check_mill_will_be_ruined(2,
+                                                                                             prev_pos,
+                                                                                             self.board,
+                                                                                             self.player_2_mills_num,
+                                                                                             self.player_2_almost_mills_num)
                     next_positions = get_directions(prev_pos)
                     for next_pos in next_positions:
                         if self.board[next_pos] == 0:
-                            (new_board,
-                             new_player_1_positions,
-                             new_player_2_positions) = self.stage_2_update_after_partial_move(2, prev_pos, next_pos,
-                                                                                              soldier_index)
+                            (after_move_board,
+                             after_move_player_1_positions,
+                             after_move_player_2_positions) = self.stage_2_update_after_partial_move(2,
+                                                                                                     prev_pos,
+                                                                                                     next_pos,
+                                                                                                     soldier_index)
                             (is_new_mill,
-                             new_player_2_mills_num,
-                             new_player_2_almost_mills_num) = self.check_mill_was_created(2,
-                                                                                          next_pos,
-                                                                                          new_board,
-                                                                                          new_player_2_mills_num,
-                                                                                          new_player_2_almost_mills_num)
+                             after_move_player_2_mills_num,
+                             after_move_player_2_almost_mills_num) = self.check_mill_was_created(2,
+                                                                                                 next_pos,
+                                                                                                 after_move_board,
+                                                                                                 before_move_player_2_mills_num,
+                                                                                                 before_move_player_2_almost_mills_num)
                             if is_new_mill:
                                 for rival_index, rival_pos in enumerate(self.player_1_positions):
-                                    (new_player_1_mills_num,
-                                     new_player_1_almost_mills_num) = self.check_mill_will_be_ruined(1, rival_pos,
-                                                                                                     new_board,
-                                                                                                     self.player_1_mills_num,
-                                                                                                     self.player_1_almost_mills_num)
-                                    (new_board_after_kill, new_player_1_positions_after_kill,
-                                     new_player_2_positions_after_kill) = self.update_after_soldier_killed(new_board, 1,
+                                    if rival_pos >= 0:
+                                        (after_kill_player_1_mills_num,
+                                         after_kill_player_1_almost_mills_num) = self.check_mill_will_be_ruined(1,
+                                                                                                                rival_pos,
+                                                                                                                after_move_board,
+                                                                                                                self.player_1_mills_num,
+                                                                                                                self.player_1_almost_mills_num)
+                                        (after_kill_board,
+                                         after_kill_player_1_positions,
+                                         after_kill_player_2_positions) = self.update_after_soldier_killed(1,
+                                                                                                           after_move_board,
                                                                                                            rival_pos,
                                                                                                            rival_index,
-                                                                                                           new_player_1_positions,
-                                                                                                           new_player_2_positions)
-                                    yield State(1, new_board_after_kill, new_player_1_positions_after_kill,
-                                                new_player_2_positions, self.player_1_soldiers_num - 1,
-                                                self.player_2_soldiers_num, new_player_1_mills_num,
-                                                new_player_2_mills_num, new_player_1_almost_mills_num,
-                                                new_player_2_almost_mills_num)
+                                                                                                           after_move_player_1_positions,
+                                                                                                           after_move_player_2_positions)
+                                        (_,
+                                         after_kill_player_2_mills_num,
+                                         after_kill_player_2_almost_mills_num) = self.check_mill_was_created(2,
+                                                                                                             rival_pos,
+                                                                                                             after_kill_board,
+                                                                                                             after_move_player_2_mills_num,
+                                                                                                             after_move_player_2_almost_mills_num)
+                                        yield State(1, after_kill_board,
+                                                    after_kill_player_1_positions, after_kill_player_2_positions,
+                                                    self.player_1_soldiers_num - 1, self.player_2_soldiers_num,
+                                                    after_kill_player_1_mills_num, after_kill_player_2_mills_num,
+                                                    after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num)
                             else:
-                                yield State(1, new_board, new_player_1_positions,
-                                            new_player_2_positions, self.player_1_soldiers_num,
-                                            self.player_2_soldiers_num, self.player_1_mills_num,
-                                            new_player_2_mills_num, self.player_1_almost_mills_num,
-                                            new_player_2_almost_mills_num)
+                                yield State(1, after_move_board,
+                                            after_move_player_1_positions, after_move_player_2_positions,
+                                            self.player_1_soldiers_num, self.player_2_soldiers_num,
+                                            self.player_1_mills_num, after_move_player_2_mills_num,
+                                            self.player_1_almost_mills_num, after_move_player_2_almost_mills_num)
