@@ -6,10 +6,11 @@ from players.AbstractPlayer import AbstractPlayer
 import numpy as np
 from SearchAlgos import MiniMax
 import utils
+import time
 
 
 def is_enough_time(i):
-    return i < 4
+    return i < 5
 
 
 class Player(AbstractPlayer):
@@ -35,28 +36,40 @@ class Player(AbstractPlayer):
         output:
             - direction: tuple, specifing the Player's movement
         """
+        end_time = time.time() + time_limit
         if not self.is_game_started:
             self.player = 1
             self.state.player = 1
             self.turn_num = 1
             self.is_game_started = True
         curr_stage = 2 if self.turn_num > 18 else 1
-        minimax = MiniMax(utils.utility, utils.succ, None, utils.is_goal, self.turn_num, self.player)
+        minimax = MiniMax(utils.utility, utils.succ, None, utils.is_goal, self.turn_num, self.player, end_time)
         best_succ = None
         max_depth = 1
-        while is_enough_time(max_depth):
+        time_out = False
+        while True:
             inner_max_val = float("-inf")
             inner_best_succ = None
             for next_succ in utils.succ(self.state, curr_stage):
                 curr_val = minimax.search(next_succ, max_depth, False, 1)
+                if curr_val is None:
+                    time_out = True
+                    break
                 if curr_val >= inner_max_val:
                     inner_max_val = curr_val
                     inner_best_succ = next_succ
+            if time_out:
+                break
             best_succ = inner_best_succ
             max_depth += 1
         self.turn_num += 1
-        self.state = best_succ
-        return best_succ.last_move
+        if best_succ is not None:
+            self.state = best_succ
+        elif inner_best_succ is not None:
+            self.state = inner_best_succ
+        else:
+            raise TimeoutError
+        return self.state.last_move
 
     def set_rival_move(self, move):
         """Update your info, given the new position of the rival.
@@ -67,7 +80,7 @@ class Player(AbstractPlayer):
         # TODO: erase the following line and implement this function.
         if not self.is_game_started:
             self.player = 2
-            self.state.player = 2
+            self.state.player = 1
             self.turn_num = 2
             self.is_game_started = True
         else:

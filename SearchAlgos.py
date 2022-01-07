@@ -9,7 +9,7 @@ BETA_VALUE_INIT = np.inf  # !!!!!
 
 
 class SearchAlgos:
-    def __init__(self, utility, succ, perform_move=None, goal=None, turn_num=None, player=0):
+    def __init__(self, utility, succ, perform_move=None, goal=None, turn_num=None, player=0, end_time=0):
         """The constructor for all the search algos.
         You can code these functions as you like to, 
         and use them in MiniMax and AlphaBeta algos as learned in class
@@ -24,6 +24,7 @@ class SearchAlgos:
         self.goal = goal
         self.turn_num = turn_num
         self.player = player
+        self.end_time = end_time
 
     def search(self, state, max_depth, maximizing_player, curr_depth):
         pass
@@ -39,6 +40,8 @@ class MiniMax(SearchAlgos):
         :param curr_depth: The current depth
         :return: A tuple: (The min max algorithm value, The direction in case of max node or None in min mode)
         """
+        if self.end_time - time.time() <= 0.01:
+            return None
         curr_turn_num = self.turn_num + curr_depth
         curr_stage = 2 if curr_turn_num > 18 else 1
         if self.goal(state, curr_turn_num) or max_depth == curr_depth:
@@ -46,12 +49,18 @@ class MiniMax(SearchAlgos):
         if maximizing_player:
             max_val = float("-inf")
             for child in self.succ(state, curr_stage):
-                max_val = max(max_val, self.search(child, max_depth, False, curr_depth + 1))
+                curr_val = self.search(child, max_depth, False, curr_depth + 1)
+                if curr_val is None:
+                    return None
+                max_val = max(max_val, curr_val)
             return max_val
         else:
             min_val = float("inf")
             for child in self.succ(state, curr_stage):
-                min_val = min(min_val, self.search(child, max_depth, True, curr_depth + 1))
+                curr_val = self.search(child, max_depth, True, curr_depth + 1)
+                if curr_val is None:
+                    return None
+                min_val = min(min_val, curr_val)
             return min_val
 
 
