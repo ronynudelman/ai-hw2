@@ -2,8 +2,6 @@
 MiniMax Player
 """
 from players.AbstractPlayer import AbstractPlayer
-#TODO: you can import more modules, if needed
-import numpy as np
 from SearchAlgos import MiniMax
 import utils
 import time
@@ -15,8 +13,7 @@ def is_enough_time(i):
 
 class Player(AbstractPlayer):
     def __init__(self, game_time):
-        AbstractPlayer.__init__(self, game_time) # keep the inheritance of the parent's (AbstractPlayer) __init__()
-        #TODO: initialize more fields, if needed, and the AlphaBeta algorithm from SearchAlgos.py
+        AbstractPlayer.__init__(self, game_time)
 
     def set_game_params(self, board):
         """Set the game parameters needed for this player.
@@ -26,7 +23,6 @@ class Player(AbstractPlayer):
             - board: np.array, of the board.
         No output is expected.
         """
-        # TODO: erase the following line and implement this function.
         self.state.board = board
 
     def make_move(self, time_limit):
@@ -77,7 +73,6 @@ class Player(AbstractPlayer):
             - move: tuple, the new position of the rival.
         No output is expected
         """
-        # TODO: erase the following line and implement this function.
         if not self.is_game_started:
             self.player = 2
             self.state.player = 1
@@ -86,11 +81,3 @@ class Player(AbstractPlayer):
         else:
             self.turn_num += 1
         self.state.update_by_rival_move(move)
-
-    ########## helper functions in class ##########
-    # TODO: add here helper functions in class, if needed
-
-
-
-    ########## helper functions for AlphaBeta algorithm ##########
-    # TODO: add here the utility, succ, an
