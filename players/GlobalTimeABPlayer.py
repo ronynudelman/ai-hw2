@@ -1,14 +1,30 @@
 """
 MiniMax Player with AlphaBeta pruning and global time
 """
+import time
+import utils
+import math
+from SearchAlgos import AlphaBeta
+
 from players.AbstractPlayer import AbstractPlayer
 #TODO: you can import more modules, if needed
 
+def calc_time_limit(turn_num, game_time=0):
+    player_turn_num = math.ceil(turn_num / 2)
+    if player_turn_num <= 20:
+        return ((-0.04 * player_turn_num * player_turn_num + player_turn_num + 0.38) / 100) * 0.8 * game_time
+    if 20 < player_turn_num <= 40:
+        return max(0.1, game_time / 50 - 0.001 * game_time * (player_turn_num - 20))
+    return 0.1
 
 class Player(AbstractPlayer):
     def __init__(self, game_time):
         AbstractPlayer.__init__(self, game_time) # keep the inheritance of the parent's (AbstractPlayer) __init__()
-        #TODO: initialize more fields, if needed, and the AlphaBeta algorithm from SearchAlgos.py
+        self.end_time = time.time() + self.game_time
+        self.time_limits = [0]
+        for i in range(1, 41):
+            self.time_limits.append(calc_time_limit(i, game_time))
+
 
 
     def set_game_params(self, board):
@@ -19,8 +35,7 @@ class Player(AbstractPlayer):
             - board: np.array, of the board.
         No output is expected.
         """
-        #TODO: erase the following line and implement this function.
-        raise NotImplementedError
+        self.state.board = board
     
 
     def make_move(self, time_limit):
@@ -30,8 +45,45 @@ class Player(AbstractPlayer):
         output:
             - direction: tuple, specifing the Player's movement
         """
-        #TODO: erase the following line and implement this function.
-        raise NotImplementedError
+        if not self.is_game_started:
+            self.player = 1
+            self.state.player = 1
+            self.turn_num = 1
+            self.is_game_started = True
+        end_time = time.time() + self.get_time_limit(self.turn_num)
+        curr_stage = 2 if self.turn_num > 18 else 1
+        alphabeta = AlphaBeta(utils.utility, utils.succ, None, utils.is_goal, self.turn_num, self.player, end_time)
+        best_succ = None
+        max_depth = 1
+        time_out = False
+        while True:
+            inner_max_val = float("-inf")
+            inner_best_succ = None
+            alpha = utils.ALPHA_VALUE_INIT
+            beta = utils.BETA_VALUE_INIT
+            for next_succ in utils.succ(self.state, curr_stage):
+                curr_val = alphabeta.search(next_succ, max_depth, False, 1)
+                if curr_val is None:
+                    time_out = True
+                    break
+                if curr_val >= inner_max_val:
+                    inner_max_val = curr_val
+                    inner_best_succ = next_succ
+                if inner_max_val >= beta:
+                    break
+                alpha = max(alpha, inner_max_val)
+            if time_out:
+                break
+            best_succ = inner_best_succ
+            max_depth += 1
+        self.turn_num += 1
+        if best_succ is not None:
+            self.state = best_succ
+        elif inner_best_succ is not None:
+            self.state = inner_best_succ
+        else:
+            raise TimeoutError
+        return self.state.last_move
 
 
     def set_rival_move(self, move):
@@ -40,13 +92,16 @@ class Player(AbstractPlayer):
             - move: tuple, the new position of the rival.
         No output is expected
         """
-        #TODO: erase the following line and implement this function.
-        raise NotImplementedError
+        if not self.is_game_started:
+            self.player = 2
+            self.state.player = 1
+            self.turn_num = 2
+            self.is_game_started = True
+        else:
+            self.turn_num += 1
+        self.state.update_by_rival_move(move)
 
-
-    ########## helper functions in class ##########
-    #TODO: add here helper functions in class, if needed
-
-
-    ########## helper functions for AlphaBeta algorithm ##########
-    #TODO: add here the utility, succ, and perform_move functions used in AlphaBeta algorithm
+    def get_time_limit(self, turn_num):
+        if turn_num <= 40:
+            return self.time_limits[turn_num]
+        return 0.1
