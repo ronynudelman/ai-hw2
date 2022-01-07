@@ -155,8 +155,11 @@ def utility(state, player):
         return heuristic(state, player)
 
 
-def is_goal(state):
-    return state.is_goal()
+def is_goal(state, curr_turn_num):
+    if curr_turn_num > 18:
+        return state.is_goal()
+    else:
+        return False
 
 
 class State:
@@ -179,6 +182,70 @@ class State:
         self.is_player_1_can_move = is_player_i_can_move(1, board)
         self.is_player_2_can_move = is_player_i_can_move(2, board)
         self.last_move = last_move
+
+    def update_board_and_pos_by_rival_move(self):
+        (rival_pos, rival_soldier, dead_my_pos) = self.last_move
+        if self.player == 1:
+            prev_rival_pos = self.player_1_positions[rival_soldier]
+            self.player_1_positions[rival_soldier] = rival_pos
+            self.board[rival_pos] = 1
+            if prev_rival_pos != -1:
+                self.board[prev_rival_pos] = 0
+            if dead_my_pos != -1:
+                self.board[dead_my_pos] = 0
+                for index, pos in enumerate(self.player_2_positions):
+                    if pos == dead_my_pos:
+                        self.player_2_positions[index] = -2
+                        break
+        else:
+            prev_rival_pos = self.player_2_positions[rival_soldier]
+            self.player_2_positions[rival_soldier] = rival_pos
+            self.board[rival_pos] = 2
+            if prev_rival_pos != -1:
+                self.board[prev_rival_pos] = 0
+            if dead_my_pos != -1:
+                self.board[dead_my_pos] = 0
+                for index, pos in enumerate(self.player_1_positions):
+                    if pos == dead_my_pos:
+                        self.player_1_positions[index] = -2
+                        break
+
+    def update_soldiers_num_by_rival_move(self):
+        player_1_soldiers_counter = 0
+        for pos in self.player_1_positions:
+            if pos >= 0:
+                player_1_soldiers_counter += 1
+        player_2_soldiers_counter = 0
+        for pos in self.player_2_positions:
+            if pos >= 0:
+                player_2_soldiers_counter += 1
+        self.player_1_soldiers_num = player_1_soldiers_counter
+        self.player_2_soldiers_num = player_2_soldiers_counter
+
+    def update_mills_num_by_rival_move(self):
+        player_1_mills_counter = 0
+        player_1_almost_mills_counter = 0
+        player_2_mills_counter = 0
+        player_2_almost_mills_counter = 0
+        for pos, value in enumerate(self.board):
+            player_1_mills_counter += self.is_mill(1, pos, self.board)
+            player_1_almost_mills_counter += self.is_almost_mill(1, pos, self.board)
+            player_2_mills_counter += self.is_mill(2, pos, self.board)
+            player_2_almost_mills_counter += self.is_almost_mill(2, pos, self.board)
+        self.player_1_mills_num = player_1_mills_counter // 3
+        self.player_1_almost_mills_num = player_1_almost_mills_counter // 3
+        self.player_2_mills_num = player_2_mills_counter // 3
+        self.player_2_almost_mills_num = player_2_almost_mills_counter // 3
+
+    def update_by_rival_move(self, move):
+        # currently, self.player is the rival!
+        self.last_move = move
+        self.update_board_and_pos_by_rival_move()
+        self.update_soldiers_num_by_rival_move()
+        self.update_mills_num_by_rival_move()
+        self.is_player_1_can_move = is_player_i_can_move(1, self.board)
+        self.is_player_2_can_move = is_player_i_can_move(2, self.board)
+        self.player = 1 if self.player == 2 else 2
 
     def print(self):
         print("self.player =", self.player)
@@ -570,5 +637,5 @@ class State:
                                             after_move_player_1_positions, after_move_player_2_positions,
                                             self.player_1_soldiers_num, self.player_2_soldiers_num,
                                             self.player_1_mills_num, after_move_player_2_mills_num,
-                                            self.player_1_almost_mills_num, after_move_player_2_almost_mills_num
+                                            self.player_1_almost_mills_num, after_move_player_2_almost_mills_num,
                                             (next_pos, soldier_index, -1))
