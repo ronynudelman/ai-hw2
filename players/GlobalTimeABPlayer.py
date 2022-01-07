@@ -22,9 +22,6 @@ class Player(AbstractPlayer):
         self.time_limits = [0]
         for turn_num in range(1, 41):
             self.time_limits.append(calc_time_limit(turn_num, game_time))
-        for index, x in enumerate(self.time_limits):
-            print("index ", index, " ,time ", x)
-        print("SUM- ", sum(self.time_limits))
 
 
     def set_game_params(self, board):
