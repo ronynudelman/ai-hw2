@@ -5,26 +5,26 @@ import time
 import utils
 import math
 from SearchAlgos import AlphaBeta
-
 from players.AbstractPlayer import AbstractPlayer
-#TODO: you can import more modules, if needed
+
 
 def calc_time_limit(turn_num, game_time=0):
-    player_turn_num = math.ceil(turn_num / 2)
-    if player_turn_num <= 20:
-        return ((-0.04 * player_turn_num * player_turn_num + player_turn_num + 0.38) / 100) * 0.8 * game_time
-    if 20 < player_turn_num <= 40:
-        return max(0.1, game_time / 50 - 0.001 * game_time * (player_turn_num - 20))
+    if turn_num <= 20:
+        return ((-0.04 * turn_num * turn_num + turn_num + 0.38) / 100) * 0.8 * game_time
+    if 20 < turn_num <= 40:
+        return max(0.1, game_time / 50 - 0.001 * game_time * (turn_num - 20))
     return 0.1
+
 
 class Player(AbstractPlayer):
     def __init__(self, game_time):
         AbstractPlayer.__init__(self, game_time) # keep the inheritance of the parent's (AbstractPlayer) __init__()
-        self.end_time = time.time() + self.game_time
         self.time_limits = [0]
-        for i in range(1, 41):
-            self.time_limits.append(calc_time_limit(i, game_time))
-
+        for turn_num in range(1, 41):
+            self.time_limits.append(calc_time_limit(turn_num, game_time))
+        for index, x in enumerate(self.time_limits):
+            print("index ", index, " ,time ", x)
+        print("SUM- ", sum(self.time_limits))
 
 
     def set_game_params(self, board):
@@ -102,6 +102,7 @@ class Player(AbstractPlayer):
         self.state.update_by_rival_move(move)
 
     def get_time_limit(self, turn_num):
-        if turn_num <= 40:
-            return self.time_limits[turn_num]
+        player_turn_num = math.ceil(turn_num / 2)
+        if player_turn_num <= 40:
+            return self.time_limits[player_turn_num]
         return 0.1
