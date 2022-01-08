@@ -6,6 +6,7 @@ import utils
 import math
 from SearchAlgos import AlphaBeta
 from players.AbstractPlayer import AbstractPlayer
+import numpy as np
 
 
 def calc_time_limit(turn_num, game_time=0):
@@ -17,6 +18,19 @@ def calc_time_limit(turn_num, game_time=0):
 class Player(AbstractPlayer):
     def __init__(self, game_time):
         AbstractPlayer.__init__(self, game_time) # keep the inheritance of the parent's (AbstractPlayer) __init__()
+        self.is_game_started = False
+        self.player = 0                             # At the beginning we don't know if we are player 1 or 2
+        self.turn_num = 0
+        self.state = utils.State(player=0,          # At the beginning we don't know if we are player 1 or 2
+                                 board=np.full(24, 0),
+                                 player_1_positions=np.full(9, -1),
+                                 player_2_positions=np.full(9, -1),
+                                 player_1_soldiers_num=0,
+                                 player_2_soldiers_num=0,
+                                 player_1_mills_num=0,
+                                 player_2_mills_num=0,
+                                 player_1_almost_mills_num=0,
+                                 player_2_almost_mills_num=0)
         self.time_limits = [0]
         for turn_num in range(1, 51):
             self.time_limits.append(calc_time_limit(turn_num, game_time))
@@ -32,7 +46,7 @@ class Player(AbstractPlayer):
         No output is expected.
         """
         self.state.board = board
-    
+
 
     def make_move(self, time_limit):
         """Make move with this Player.
@@ -66,7 +80,7 @@ class Player(AbstractPlayer):
                 if curr_val >= inner_max_val:
                     inner_max_val = curr_val
                     inner_best_succ = next_succ
-                if inner_best_succ.is_winning_state(self.player):
+                if inner_best_succ.is_winning_state(self.player, self.turn_num):
                     got_winning_state = True
                     break
                 if inner_max_val >= beta:

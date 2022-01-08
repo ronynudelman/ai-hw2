@@ -5,6 +5,7 @@ from players.AbstractPlayer import AbstractPlayer
 import time
 import utils
 from SearchAlgos import AlphaBeta
+import numpy as np
 
 
 def heuristic(state, player):
@@ -31,6 +32,19 @@ class Player(AbstractPlayer):
     def __init__(self, game_time):
         AbstractPlayer.__init__(self, game_time) # keep the inheritance of the parent's (AbstractPlayer) __init__()
         #TODO: initialize more fields, if needed, and the AlphaBeta algorithm from SearchAlgos.py
+        self.is_game_started = False
+        self.player = 0                             # At the beginning we don't know if we are player 1 or 2
+        self.turn_num = 0
+        self.state = utils.State(player=0,          # At the beginning we don't know if we are player 1 or 2
+                                 board=np.full(24, 0),
+                                 player_1_positions=np.full(9, -1),
+                                 player_2_positions=np.full(9, -1),
+                                 player_1_soldiers_num=0,
+                                 player_2_soldiers_num=0,
+                                 player_1_mills_num=0,
+                                 player_2_mills_num=0,
+                                 player_1_almost_mills_num=0,
+                                 player_2_almost_mills_num=0)
 
     def set_game_params(self, board):
         """Set the game parameters needed for this player.
@@ -67,7 +81,7 @@ class Player(AbstractPlayer):
             if curr_val >= max_val:
                 max_val = curr_val
                 best_succ = next_succ
-            if best_succ.is_winning_state(self.player):
+            if best_succ.is_winning_state(self.player, self.turn_num):
                 break
             if max_val >= beta:
                 break

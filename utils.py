@@ -318,7 +318,9 @@ class State:
         print("self.is_player_2_can_move =", self.is_player_2_can_move)
         print("self.last_move =", self.last_move)
 
-    def is_winning_state(self, player):
+    def is_winning_state(self, player, turn_num):
+        if turn_num <= 18:
+            return False
         if player == 1:
             return self.is_player_1_won()
         else:
