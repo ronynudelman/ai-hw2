@@ -128,11 +128,16 @@ def succ(state, stage):
         return state.stage_2_succ()
 
 
+
 def heuristic(state, player):
     h = 0
-    h += state.player_1_soldiers_num - state.player_2_soldiers_num
-    h += (state.player_1_mills_num - state.player_2_mills_num) * 3
-    h += (state.player_1_almost_mills_num - state.player_2_almost_mills_num) * 2
+    (player_1_potential_mills, player_2_potential_mills) = state.get_num_of_potential_mills()
+    (num_of_possible_moves_for_player_1, num_of_possible_moves_for_player_2) = state.get_num_of_possible_moves()
+    h += (4 * num_of_possible_moves_for_player_1 - 5 * num_of_possible_moves_for_player_2) * 2
+    h += (5 * player_1_potential_mills - 4 * player_2_potential_mills) * 30
+    h += (4 * state.player_1_soldiers_num - 5 * state.player_2_soldiers_num) * 50
+    h += (5 * state.player_1_mills_num - 4 * state.player_2_mills_num) * 30
+    h += (5 * state.player_1_almost_mills_num - 4 * state.player_2_almost_mills_num) * 15
     if player == 1:
         return h
     else:
@@ -179,6 +184,59 @@ class State:
         self.is_player_1_can_move = is_player_i_can_move(1, board)
         self.is_player_2_can_move = is_player_i_can_move(2, board)
         self.last_move = last_move
+
+    def get_num_of_potential_mills(self):
+        player_1_potential_mills = 0
+        player_2_potential_mills = 0
+        for index, value in enumerate(self.board):
+            if value == 0:
+                possible_mills = get_possible_mills(index)
+                if possible_mills[0][0] == 1 and possible_mills[0][1] == 1:
+                    adjacents = get_directions(index)
+                    for adjacent in adjacents:
+                        if not adjacent in possible_mills[0]:
+                            if self.board[adjacent] == 1:
+                                player_1_potential_mills += 1
+                                break
+                elif possible_mills[0][0] == 2 and possible_mills[0][1] == 2:
+                    adjacents = get_directions(index)
+                    for adjacent in adjacents:
+                        if not adjacent in possible_mills[0]:
+                            if self.board[adjacent] == 2:
+                                player_2_potential_mills += 1
+                                break
+                elif possible_mills[1][0] == 1 and possible_mills[1][1] == 1:
+                    adjacents = get_directions(index)
+                    for adjacent in adjacents:
+                        if not adjacent in possible_mills[1]:
+                            if self.board[adjacent] == 1:
+                                player_1_potential_mills += 1
+                                break
+                elif possible_mills[1][0] == 2 and possible_mills[1][1] == 2:
+                    adjacents = get_directions(index)
+                    for adjacent in adjacents:
+                        if not adjacent in possible_mills[1]:
+                            if self.board[adjacent] == 2:
+                                player_2_potential_mills += 1
+                                break
+        return player_1_potential_mills, player_2_potential_mills
+
+    def count_empty_adjacents(self, adjacents):
+        count = 0
+        for index in adjacents:
+            count += 1 if self.board[index] == 0 else 0
+        return count
+
+    def get_num_of_possible_moves(self):
+        num_of_possible_moves_for_player_1 = 0
+        num_of_possible_moves_for_player_2 = 0
+        for index, value in enumerate(self.board):
+            if value == 1:
+                num_of_possible_moves_for_player_1 += self.count_empty_adjacents(get_directions(index))
+            elif value == 2:
+                num_of_possible_moves_for_player_2 += self.count_empty_adjacents(get_directions(index))
+        return num_of_possible_moves_for_player_1, num_of_possible_moves_for_player_2
+
 
     def update_board_and_pos_by_rival_move(self):
         (rival_pos, rival_soldier, dead_my_pos) = self.last_move

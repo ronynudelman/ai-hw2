@@ -9,19 +9,18 @@ from players.AbstractPlayer import AbstractPlayer
 
 
 def calc_time_limit(turn_num, game_time=0):
-    if turn_num <= 20:
-        return ((-0.04 * turn_num * turn_num + turn_num + 0.38) / 100) * 0.8 * game_time
-    if 20 < turn_num <= 40:
-        return max(0.1, game_time / 50 - 0.001 * game_time * (turn_num - 20))
-    return 0.1
+    if turn_num <= 28:
+        return -(((turn_num + 1) * (turn_num - 30)) / 5000) * 0.8 * game_time
+    return max(0.1, -game_time * (turn_num / 1210 - 5 / 121))
 
 
 class Player(AbstractPlayer):
     def __init__(self, game_time):
         AbstractPlayer.__init__(self, game_time) # keep the inheritance of the parent's (AbstractPlayer) __init__()
         self.time_limits = [0]
-        for turn_num in range(1, 41):
+        for turn_num in range(1, 51):
             self.time_limits.append(calc_time_limit(turn_num, game_time))
+
 
 
     def set_game_params(self, board):
@@ -100,6 +99,6 @@ class Player(AbstractPlayer):
 
     def get_time_limit(self, turn_num):
         player_turn_num = math.ceil(turn_num / 2)
-        if player_turn_num <= 40:
+        if player_turn_num <= 50:
             return self.time_limits[player_turn_num]
         return 0.1

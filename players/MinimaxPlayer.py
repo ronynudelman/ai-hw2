@@ -7,10 +7,6 @@ import utils
 import time
 
 
-def is_enough_time(i):
-    return i < 5
-
-
 class Player(AbstractPlayer):
     def __init__(self, game_time):
         AbstractPlayer.__init__(self, game_time)
