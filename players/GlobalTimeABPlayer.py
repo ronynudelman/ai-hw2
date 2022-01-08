@@ -58,7 +58,7 @@ class Player(AbstractPlayer):
             alpha = utils.ALPHA_VALUE_INIT
             beta = utils.BETA_VALUE_INIT
             for next_succ in utils.succ(self.state, curr_stage):
-                curr_val = alphabeta.search(next_succ, max_depth, False, 1)
+                curr_val = alphabeta.search(next_succ, max_depth, False, 1, alpha, beta)
                 if curr_val is None:
                     time_out = True
                     break
