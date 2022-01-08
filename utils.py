@@ -318,6 +318,12 @@ class State:
         print("self.is_player_2_can_move =", self.is_player_2_can_move)
         print("self.last_move =", self.last_move)
 
+    def is_winning_state(self, player):
+        if player == 1:
+            return self.is_player_1_won()
+        else:
+            return self.is_player_2_won()
+
     def is_player_1_won(self):
         if self.player_2_soldiers_num < 3:
             return True

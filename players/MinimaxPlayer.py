@@ -39,6 +39,7 @@ class Player(AbstractPlayer):
         best_succ = None
         max_depth = 1
         time_out = False
+        got_winning_state = False
         while True:
             inner_max_val = float("-inf")
             inner_best_succ = None
@@ -50,9 +51,14 @@ class Player(AbstractPlayer):
                 if curr_val >= inner_max_val:
                     inner_max_val = curr_val
                     inner_best_succ = next_succ
+                if inner_best_succ.is_winning_state(self.player):
+                    got_winning_state = True
+                    break
             if time_out:
                 break
             best_succ = inner_best_succ
+            if got_winning_state:
+                break
             max_depth += 1
         self.turn_num += 1
         if best_succ is not None:

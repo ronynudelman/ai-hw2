@@ -67,6 +67,8 @@ class Player(AbstractPlayer):
             if curr_val >= max_val:
                 max_val = curr_val
                 best_succ = next_succ
+            if best_succ.is_winning_state(self.player):
+                break
             if max_val >= beta:
                 break
             alpha = max(alpha, max_val)
