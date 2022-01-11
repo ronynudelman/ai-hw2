@@ -38,7 +38,7 @@ class MiniMax(SearchAlgos):
         :param curr_depth: The current depth
         :return: A tuple: (The min max algorithm value, The direction in case of max node or None in min mode)
         """
-        if self.end_time - time.time() <= 0.01:
+        if self.end_time - time.time() <= 0.03:
             return None
         curr_turn_num = self.turn_num + curr_depth
         curr_stage = 2 if curr_turn_num > 18 else 1
@@ -74,7 +74,7 @@ class AlphaBeta(SearchAlgos):
         :param: beta: beta value
         :return: A tuple: (The min max algorithm value, The direction in case of max node or None in min mode)
         """
-        if self.end_time - time.time() <= 0.01:
+        if self.end_time - time.time() <= 0.03:
             return None
         curr_turn_num = self.turn_num + curr_depth
         curr_stage = 2 if curr_turn_num > 18 else 1

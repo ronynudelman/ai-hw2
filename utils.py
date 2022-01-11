@@ -133,6 +133,8 @@ def heuristic(state, player):
     h = 0
     (player_1_potential_mills, player_2_potential_mills) = state.get_num_of_potential_mills()
     (num_of_possible_moves_for_player_1, num_of_possible_moves_for_player_2) = state.get_num_of_possible_moves()
+    h += (5 * state.player_1_killed - 4 * state.player_2_killed) * 30
+    h += (5 * state.num_of_kills_of_player_1 - 4 * state.num_of_kills_of_player_2) * 30
     h += (4 * num_of_possible_moves_for_player_1 - 5 * num_of_possible_moves_for_player_2) * 2
     h += (5 * player_1_potential_mills - 4 * player_2_potential_mills) * 30
     h += (4 * state.player_1_soldiers_num - 5 * state.player_2_soldiers_num) * 50
@@ -170,7 +172,9 @@ class State:
                  player_1_soldiers_num, player_2_soldiers_num,
                  player_1_mills_num, player_2_mills_num,
                  player_1_almost_mills_num, player_2_almost_mills_num,
-                 last_move=None):
+                 last_move=None,
+                 player_1_killed=0, player_2_killed=0,
+                 num_of_kills_of_player_1=0, num_of_kills_of_player_2=0):
         self.player = player
         self.board = board
         self.player_1_positions = player_1_positions
@@ -183,6 +187,10 @@ class State:
         self.player_2_almost_mills_num = player_2_almost_mills_num
         self.is_player_1_can_move = is_player_i_can_move(1, board)
         self.is_player_2_can_move = is_player_i_can_move(2, board)
+        self.player_1_killed = player_1_killed
+        self.player_2_killed = player_2_killed
+        self.num_of_kills_of_player_1 = num_of_kills_of_player_1
+        self.num_of_kills_of_player_2 = num_of_kills_of_player_2
         self.last_move = last_move
 
     def get_num_of_potential_mills(self):
@@ -252,6 +260,11 @@ class State:
                     if pos == dead_my_pos:
                         self.player_2_positions[index] = -2
                         break
+                self.player_1_killed = 0
+                self.player_2_killed = 1
+                self.num_of_kills_of_player_2 += 1
+            self.player_1_killed = 0
+            self.player_2_killed = 0
         else:
             prev_rival_pos = self.player_2_positions[rival_soldier]
             self.player_2_positions[rival_soldier] = rival_pos
@@ -259,11 +272,17 @@ class State:
             if prev_rival_pos != -1:
                 self.board[prev_rival_pos] = 0
             if dead_my_pos != -1:
+                self.player_2_killed = True
                 self.board[dead_my_pos] = 0
                 for index, pos in enumerate(self.player_1_positions):
                     if pos == dead_my_pos:
                         self.player_1_positions[index] = -2
                         break
+                self.player_1_killed = 1
+                self.player_2_killed = 0
+                self.num_of_kills_of_player_1 += 1
+            self.player_1_killed = 0
+            self.player_2_killed = 0
 
     def update_soldiers_num_by_rival_move(self):
         player_1_soldiers_counter = 0
@@ -435,11 +454,19 @@ class State:
         new_board[soldier_pos] = 0
         new_player_1_positions = np.copy(player_1_positions)
         new_player_2_positions = np.copy(player_2_positions)
+        player_1_killed = 0
+        player_2_killed = 0
+        num_of_kills_of_player_1 = self.num_of_kills_of_player_1
+        num_of_kills_of_player_2 = self.num_of_kills_of_player_2
         if player_i == 1:
             new_player_1_positions[soldier_index] = -2
+            player_2_killed = 1
+            num_of_kills_of_player_2 += 1
         else:
             new_player_2_positions[soldier_index] = -2
-        return new_board, new_player_1_positions, new_player_2_positions
+            player_1_killed = 1
+            num_of_kills_of_player_1 += 1
+        return new_board, new_player_1_positions, new_player_2_positions, player_1_killed, player_2_killed, num_of_kills_of_player_1, num_of_kills_of_player_2
 
     def stage_1_update_after_partial_move(self, player_i, pos):
         new_board = np.copy(self.board)
@@ -493,7 +520,11 @@ class State:
                                                                                                         before_insert_player_2_almost_mills_num)
                                 (after_kill_board,
                                  after_kill_player_1_positions,
-                                 after_kill_player_2_positions) = self.update_after_soldier_killed(2,
+                                 after_kill_player_2_positions,
+                                 player_1_killed,
+                                 player_2_killed,
+                                 num_of_kills_of_player_1,
+                                 num_of_kills_of_player_2) = self.update_after_soldier_killed(2,
                                                                                                    after_insert_board,
                                                                                                    rival_pos,
                                                                                                    rival_index,
@@ -511,14 +542,16 @@ class State:
                                             self.player_1_soldiers_num + 1, self.player_2_soldiers_num - 1,
                                             after_kill_player_1_mills_num, after_kill_player_2_mills_num,
                                             after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num,
-                                            (pos, new_soldier_index, rival_pos))
+                                            (pos, new_soldier_index, rival_pos), player_1_killed, player_2_killed,
+                                            num_of_kills_of_player_1, num_of_kills_of_player_2)
                     else:
                         yield State(2, after_insert_board,
                                     after_insert_player_1_positions, after_insert_player_2_positions,
                                     self.player_1_soldiers_num + 1, self.player_2_soldiers_num,
                                     after_insert_player_1_mills_num, before_insert_player_2_mills_num,
                                     after_insert_player_1_almost_mills_num, before_insert_player_2_almost_mills_num,
-                                    (pos, new_soldier_index, -1))
+                                    (pos, new_soldier_index, -1), 0, 0, self.num_of_kills_of_player_1,
+                                    self.num_of_kills_of_player_2)
         else:
             for pos, value in enumerate(self.board):
                 if value == 0:
@@ -550,7 +583,11 @@ class State:
                                                                                                         before_insert_player_1_almost_mills_num)
                                 (after_kill_board,
                                  after_kill_player_1_positions,
-                                 after_kill_player_2_positions) = self.update_after_soldier_killed(1,
+                                 after_kill_player_2_positions,
+                                 player_1_killed,
+                                 player_2_killed,
+                                 num_of_kills_of_player_1,
+                                 num_of_kills_of_player_2) = self.update_after_soldier_killed(1,
                                                                                                    after_insert_board,
                                                                                                    rival_pos,
                                                                                                    rival_index,
@@ -568,14 +605,16 @@ class State:
                                             self.player_1_soldiers_num - 1, self.player_2_soldiers_num + 1,
                                             after_kill_player_1_mills_num, after_kill_player_2_mills_num,
                                             after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num,
-                                            (pos, new_soldier_index, rival_pos))
+                                            (pos, new_soldier_index, rival_pos), player_1_killed, player_2_killed,
+                                            num_of_kills_of_player_1, num_of_kills_of_player_2)
                     else:
                         yield State(1, after_insert_board,
                                     after_insert_player_1_positions, after_insert_player_2_positions,
                                     self.player_1_soldiers_num, self.player_2_soldiers_num + 1,
                                     before_insert_player_1_mills_num, after_insert_player_2_mills_num,
                                     before_insert_player_1_almost_mills_num, after_insert_player_2_almost_mills_num,
-                                    (pos, new_soldier_index, -1))
+                                    (pos, new_soldier_index, -1), 0, 0, self.num_of_kills_of_player_1,
+                                    self.num_of_kills_of_player_2)
 
     def stage_2_succ(self):
         if self.player == 1:
@@ -614,7 +653,11 @@ class State:
                                                                                                                 self.player_2_almost_mills_num)
                                         (after_kill_board,
                                          after_kill_player_1_positions,
-                                         after_kill_player_2_positions) = self.update_after_soldier_killed(2,
+                                         after_kill_player_2_positions,
+                                         player_1_killed,
+                                         player_2_killed,
+                                         num_of_kills_of_player_1,
+                                         num_of_kills_of_player_2) = self.update_after_soldier_killed(2,
                                                                                                            after_move_board,
                                                                                                            rival_pos,
                                                                                                            rival_index,
@@ -632,14 +675,16 @@ class State:
                                                     self.player_1_soldiers_num, self.player_2_soldiers_num - 1,
                                                     after_kill_player_1_mills_num, after_kill_player_2_mills_num,
                                                     after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num,
-                                                    (next_pos, soldier_index, rival_pos))
+                                                    (next_pos, soldier_index, rival_pos), player_1_killed,
+                                                    player_2_killed, num_of_kills_of_player_1, num_of_kills_of_player_2)
                             else:
                                 yield State(2, after_move_board,
                                             after_move_player_1_positions, after_move_player_2_positions,
                                             self.player_1_soldiers_num, self.player_2_soldiers_num,
                                             after_move_player_1_mills_num, self.player_2_mills_num,
                                             after_move_player_1_almost_mills_num, self.player_2_almost_mills_num,
-                                            (next_pos, soldier_index, -1))
+                                            (next_pos, soldier_index, -1), 0, 0, self.num_of_kills_of_player_1,
+                                            self.num_of_kills_of_player_2)
         else:
             for soldier_index, prev_pos in enumerate(self.player_2_positions):
                 if prev_pos >= 0:
@@ -676,7 +721,11 @@ class State:
                                                                                                                 self.player_1_almost_mills_num)
                                         (after_kill_board,
                                          after_kill_player_1_positions,
-                                         after_kill_player_2_positions) = self.update_after_soldier_killed(1,
+                                         after_kill_player_2_positions,
+                                         player_1_killed,
+                                         player_2_killed,
+                                         num_of_kills_of_player_1,
+                                         num_of_kills_of_player_2) = self.update_after_soldier_killed(1,
                                                                                                            after_move_board,
                                                                                                            rival_pos,
                                                                                                            rival_index,
@@ -693,12 +742,15 @@ class State:
                                                     after_kill_player_1_positions, after_kill_player_2_positions,
                                                     self.player_1_soldiers_num - 1, self.player_2_soldiers_num,
                                                     after_kill_player_1_mills_num, after_kill_player_2_mills_num,
-                                                    after_kill_player_1_almost_mills_num, after_kill_player_2_almost_mills_num,
-                                                    (next_pos, soldier_index, rival_pos))
+                                                    after_kill_player_1_almost_mills_num,
+                                                    after_kill_player_2_almost_mills_num,
+                                                    (next_pos, soldier_index, rival_pos), player_1_killed,
+                                                    player_2_killed, num_of_kills_of_player_1, num_of_kills_of_player_2)
                             else:
                                 yield State(1, after_move_board,
                                             after_move_player_1_positions, after_move_player_2_positions,
                                             self.player_1_soldiers_num, self.player_2_soldiers_num,
                                             self.player_1_mills_num, after_move_player_2_mills_num,
                                             self.player_1_almost_mills_num, after_move_player_2_almost_mills_num,
-                                            (next_pos, soldier_index, -1))
+                                            (next_pos, soldier_index, -1), 0, 0, self.num_of_kills_of_player_1,
+                                            self.num_of_kills_of_player_2)
